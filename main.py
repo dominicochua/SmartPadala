@@ -2,6 +2,7 @@ from tkinter import *
 from time import time, ctime
 import sqlite3
 from sqlite3 import Error
+from tkinter import messagebox
 
 # create db connection function
 def create_connection(db):
@@ -20,18 +21,181 @@ def create_table(conn, create_table_sql):
         c.execute(create_table_sql)
     except Error as e:
         print(e)
-# create add_transanction function
-def add_transaction():
+# create add_activity function
+# new window to fill up
+def add_activity():
+    global transact
     transact = Toplevel()
-    transact.title("ADD TRANSACTION")
     transact.iconbitmap(".\\assets\\icon.ico")
     transact.geometry("400x400")
-
+    if choice.get()=="PADALA":
+        transact.title("PADALA")
+        global first_name_entry
+        global last_name_entry
+        global phone_number_entry
+        global amount_entry
+        global smart_padala_no_entry
+        global receiver_no_entry
+        first_name_label = Label(transact, text= "FIRST NAME:").grid(row=1, column=0, ipadx=10, pady=(20,10), sticky=W)
+        first_name_entry = Entry(transact, width=35)
+        first_name_entry.grid(row=1, column=1, pady=(20,10))
+        last_name_label = Label(transact, text= "LAST NAME:").grid(row=2, column=0, ipadx=10, pady=(0,10), sticky=W)
+        last_name_entry = Entry(transact, width=35)
+        last_name_entry.grid(row=2, column=1, pady=(0,10))
+        phone_number_label = Label(transact, text= "PHONE NUMBER:").grid(row=3, column=0, ipadx=10, pady=(0,10), sticky=W)
+        phone_number_entry = Entry(transact, width=35)
+        phone_number_entry.grid(row=3, column=1, pady=(0,10))
+        amount_label = Label(transact, text= "AMOUNT:").grid(row=4, column=0, ipadx=10, pady=(0,10), sticky=W)
+        amount_entry = Entry(transact, width=35)
+        amount_entry.grid(row=4, column=1, pady=(0,10))
+        smart_padala_no_label = Label(transact, text= "SMART PADALA NUMBER:").grid(row=5, column=0, ipadx=10, pady=(0,10), sticky=W)
+        smart_padala_no_entry = Entry(transact, width=35)
+        smart_padala_no_entry.grid(row=5, column=1, pady=(0,10))
+        receiver_no_label = Label(transact, text= "RECEIVER NUMBER:").grid(row=6, column=0, ipadx=10, pady=(0,10), sticky=W)
+        receiver_no_entry = Entry(transact, width=35)
+        receiver_no_entry.grid(row=6, column=1, pady=(0,10))
+        confirm_button = Button(transact, text="CONFIRM", command=add_transaction).grid(row=7,column=1,ipadx=10, pady=(15,0))
+    elif choice.get()=="CLAIM":
+        transact.title("CLAIM")
+        reference_number_label = Label(transact, text= "REFERENCE NUMBER:").grid(row=1, column=0, ipadx=10, pady=(20,10), sticky=W)
+        reference_number_entry = Entry(transact, width=35)
+        reference_number_entry.grid(row=1, column=1, pady=(20,10))
+        amount_label = Label(transact, text= "AMOUNT:").grid(row=2, column=0, ipadx=10, pady=(0,10), sticky=W)
+        amount_entry = Entry(transact, width=35)
+        amount_entry.grid(row=2, column=1, pady=(0,10))
+        confirm_button = Button(transact, text="CONFIRM", command=add_claim).grid(row=3,column=1,ipadx=10, pady=(15,0))
+    elif choice.get()=="TOP UP":
+        transact.title("TOP UP")
+        amount_label = Label(transact, text= "AMOUNT:").grid(row=1, column=0, ipadx=10, pady=(20,10), sticky=W)
+        confirm_button = Button(transact, text="CONFIRM", command=top_up).grid(row=2,column=1,ipadx=10, pady=(15,0))
+    elif choice.get()=="WITHDRAW":
+        transact.title("WITHDRAW")
+        amount_label = Label(transact, text= "AMOUNT:").grid(row=1, column=0, ipadx=10, pady=(20,10), sticky=W)
+        confirm_button = Button(transact, text="CONFIRM", command=withdraw).grid(row=2,column=1,ipadx=10, pady=(15,0))
+    elif choice.get()=="DEPOSIT":
+        transact.title("DEPOSIT")
+        amount_label = Label(transact, text= "AMOUNT:").grid(row=1, column=0, ipadx=10, pady=(20,10), sticky=W)
+        confirm_button = Button(transact, text="CONFIRM", command=deposit).grid(row=2,column=1,ipadx=10, pady=(15,0))
+    else:
+        transact.destroy()
+        messagebox.showerror("TRANSACTION ERROR", "CHOOSE A VALID TYPE OF TRANSACTION")
     return
-    
+# refresh the root window
+def refresh():
+    return
+# add customer in customer_info table
+def add_customer():
+    conn = create_connection(database)
+    c = conn.cursor()
+    value = (str(first_name_entry.get()),str(last_name_entry.get()), int(phone_number_entry.get()))
+    sql = '''INSERT INTO customer_info (first_name, last_name, phone_number)
+                VALUES(?,?,?)'''
+    c.execute(sql,value)
+    conn.commit()
+    return c.lastrowid
+# check if customer exist in customer_info table
+def customer_checker():
+    conn = create_connection(database)
+    c = conn.cursor()
+    c.execute("SELECT * FROM customer_info")
+    rows = c.fetchall()
+    for name in rows:
+        if name[1]==str(first_name_entry.get()) and name[2]==str(last_name_entry.get()) and name[3]==int(phone_number_entry.get()):
+            return name[0]
+            break
+    return add_customer()
+# function to get the charge fee in transactions
+def charge(amount):
+    if amount < 1000:
+        fee=30
+    else:
+        amount_to_charge = amount - 1000
+        fee = 30
+        while(amount_to_charge > 0):
+            fee += 15
+            amount_to_charge -= 500
+    return fee
+def padala_charge(amount):
+    if amount < 1000:
+        fee=18.50
+    else:
+        amount_to_charge = amount - 1000
+        fee = 18.50
+        while(amount_to_charge > 0):
+            fee += 9.25
+            amount_to_charge -= 500
+    return fee
+# adding to padala_info table
+def add_padala():
+    conn = create_connection(database)
+    c = conn.cursor()
+    customer_id = customer_checker()
+    value = (str(ctime()), customer_id, str(first_name_entry.get()),str(last_name_entry.get()), int(phone_number_entry.get()),float(amount_entry.get()),int(smart_padala_no_entry.get()),int(receiver_no_entry.get()))
+    sql = '''INSERT INTO padala_info (date_and_time, customer_id, first_name, last_name, phone_number, amount_of_padala, padala_to, receiver_number)
+                VALUES(?,?,?,?,?,?,?,?)'''
+    c.execute(sql,value)
+    conn.commit()
+    return c.lastrowid
+# adding to claim_info table   
+def add_claim():
+    return 
+def top_up():
+    return 
+def withdraw():
+    return 
+def deposit():
+    return   
+# get the cash onhand and cash on padala before transaction
+def get_cash():
+    conn = create_connection(database)
+    c = conn.cursor()
+    c.execute("SELECT cash_on_hand_after, cash_on_padala_after FROM transactions_info ORDER BY transaction_id DESC LIMIT 1")
+    cash = c.fetchall()
+    try:
+        list_cash = cash[0]
+        return list_cash
+    except:
+        if not bool(cash):
+            cash.append(0)
+            cash.append(0)
+            return cash
+# adding to transaction_info table
+def add_transaction():
+    conn = create_connection(database)
+    c = conn.cursor()
+    if choice.get()=="PADALA":
+        padala_id = add_padala()
+        current_cash = get_cash()
+        coh_after = current_cash[0] + float(amount_entry.get()) + charge(float(amount_entry.get()))
+        cop_after = current_cash[1] - float(amount_entry.get()) - padala_charge(float(amount_entry.get()))
+        value = (str(ctime()), "PADALA", padala_id, float(amount_entry.get()), current_cash[0], coh_after, current_cash[1],cop_after)
+        sql = '''INSERT INTO transactions_info (date_and_time, type, padala_id, amount, cash_on_hand_before,
+                    cash_on_hand_after, cash_on_padala_before, cash_on_padala_after)
+                VALUES(?,?,?,?,?,?,?,?)'''
+
+    elif choice.get()=="CLAIM":
+        claim_id = add_claim()
+        current_cash = get_cash()
+        coh_after = current_cash[0] + float(amount_entry.get()) + charge(float(amount_entry.get()))
+        cop_after = current_cash[1] - float(amount_entry.get()) - padala_charge(float(amount_entry.get()))
+        value = (str(ctime()), "PADALA", padala_id, float(amount_entry.get()), current_cash[0], coh_after, current_cash[1],cop_after)
+        sql = '''INSERT INTO transactions_info (date_and_time, type, padala_id, amount, cash_on_hand_before,
+                    cash_on_hand_after, cash_on_padala_before, cash_on_padala_after)
+                VALUES(?,?,?,?,?,?,?,?)'''
+
+    c.execute(sql,value)
+    conn.commit()
+    transact.destroy()
+    return
+def display_padala_history():
+    conn = create_connection(database)
+    c = conn.cursor()
+    c.execute("SELECT * FROM padala_info ORDER BY padala_id DESC")
+    padala_list = c.fetchall()
+    return padala_list
 
 def main():
-
+    global database
     database = r"SmartPadala.db" 
     # define customer table
     customer_table = """CREATE TABLE IF NOT EXISTS customer_info(
@@ -39,7 +203,7 @@ def main():
                         first_name TEXT NOT NULL,
                         last_name TEXT NOT NULL,
                         phone_number INTEGER,
-                        UNIQUE (first_name, last_name)
+                        UNIQUE (first_name, last_name, phone_number)
                     )"""
     # define padala table
     padala_table ="""CREATE TABLE IF NOT EXISTS padala_info(
@@ -53,7 +217,7 @@ def main():
                         padala_to TEXT NOT NULL,
                         receiver_number INTEGER NOT NULL,
                         FOREIGN KEY (customer_id)
-                            REFERENCES customer_Info(customer_id)
+                            REFERENCES customer_info(customer_id)
                     )"""
     # define claim table
     claim_table = """CREATE TABLE IF NOT EXISTS claim_info(
@@ -66,7 +230,7 @@ def main():
                     amount_of_claim REAL NOT NULL,
                     reference_number TEXT NOT NULL,
                     FOREIGN KEY (customer_id)
-                        REFERENCES customer_Info(customer_id) 
+                        REFERENCES customer_info(customer_id) 
                 )"""
     # define transaction table
     transaction_table = """CREATE TABLE IF NOT EXISTS transactions_info(
@@ -81,10 +245,11 @@ def main():
                             cash_on_padala_before REAL NOT NULL,
                             cash_on_padala_after REAL NOT NULL,
                             FOREIGN KEY (padala_id)
-                                REFERENCES padala_Info(padala_id),
+                                REFERENCES padala_info(padala_id),
                             FOREIGN KEY (claim_id)
-                                REFERENCES padala_Info(claim_id)
+                                REFERENCES padala_info(claim_id)
                         )"""
+    global conn
     conn = create_connection(database)
     if conn is not None:
         create_table(conn, customer_table)
@@ -132,10 +297,16 @@ def main():
     # Frame Add and refresh
     frameAR = LabelFrame(root, borderwidth = 0)
     frameAR.grid(row = 2, column = 0, columnspan=2, padx = 10)
-    add_button = Button(frameAR, text = "ADD TRANSACTION ", command = add_transaction)
-    add_button.grid(row=0, column=0, ipadx=100)
-    refresh_button = Button(frameAR, text = "Refresh")
-    refresh_button.grid(row=0, column=1)
+    types = ["PADALA", "CLAIM", "TOP UP", "WITHDRAW", "DEPOSIT"]
+    global choice
+    choice = StringVar()
+    choice.set("CHOOSE A TRANSACTION")
+    add_drop = OptionMenu(frameAR, choice, *types)
+    add_drop.grid(row=0, column=0, ipadx=10, sticky=W)
+    add_button = Button(frameAR, text="ADD", command=add_activity)
+    add_button.grid(row=0, column=1, padx=(0,5))
+    refresh_button = Button(frameAR, text = "REFRESH", anchor=CENTER, command=refresh)
+    refresh_button.grid(row=0, column=2)
 
     # frame3
     frame3 = LabelFrame(root, text= "Unclaimed")
