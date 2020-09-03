@@ -36,6 +36,7 @@ def add_activity():
         global amount_entry
         global smart_padala_no_entry
         global receiver_no_entry
+        global reference_number_entry
         first_name_label = Label(transact, text= "FIRST NAME:").grid(row=1, column=0, ipadx=10, pady=(20,10), sticky=W)
         first_name_entry = Entry(transact, width=35)
         first_name_entry.grid(row=1, column=1, pady=(20,10))
@@ -63,19 +64,25 @@ def add_activity():
         amount_label = Label(transact, text= "AMOUNT:").grid(row=2, column=0, ipadx=10, pady=(0,10), sticky=W)
         amount_entry = Entry(transact, width=35)
         amount_entry.grid(row=2, column=1, pady=(0,10))
-        confirm_button = Button(transact, text="CONFIRM", command=add_claim).grid(row=3,column=1,ipadx=10, pady=(15,0))
+        confirm_button = Button(transact, text="CONFIRM", command=add_transaction).grid(row=3,column=1,ipadx=10, pady=(15,0))
     elif choice.get()=="TOP UP":
         transact.title("TOP UP")
         amount_label = Label(transact, text= "AMOUNT:").grid(row=1, column=0, ipadx=10, pady=(20,10), sticky=W)
-        confirm_button = Button(transact, text="CONFIRM", command=top_up).grid(row=2,column=1,ipadx=10, pady=(15,0))
+        amount_entry = Entry(transact, width=35)
+        amount_entry.grid(row=1, column=1,pady=(20,10))
+        confirm_button = Button(transact, text="CONFIRM", command=add_transaction).grid(row=2,column=1,ipadx=10, pady=(15,0))
     elif choice.get()=="WITHDRAW":
         transact.title("WITHDRAW")
         amount_label = Label(transact, text= "AMOUNT:").grid(row=1, column=0, ipadx=10, pady=(20,10), sticky=W)
-        confirm_button = Button(transact, text="CONFIRM", command=withdraw).grid(row=2,column=1,ipadx=10, pady=(15,0))
+        amount_entry = Entry(transact, width=35)
+        amount_entry.grid(row=1, column=1, pady=(20,10))
+        confirm_button = Button(transact, text="CONFIRM", command=add_transaction).grid(row=2,column=1,ipadx=10, pady=(15,0))
     elif choice.get()=="DEPOSIT":
         transact.title("DEPOSIT")
         amount_label = Label(transact, text= "AMOUNT:").grid(row=1, column=0, ipadx=10, pady=(20,10), sticky=W)
-        confirm_button = Button(transact, text="CONFIRM", command=deposit).grid(row=2,column=1,ipadx=10, pady=(15,0))
+        amount_entry = Entry(transact, width=35)
+        amount_entry.grid(row=1, column=1, pady=(20,10))
+        confirm_button = Button(transact, text="CONFIRM", command=add_transaction).grid(row=2,column=1,ipadx=10, pady=(15,0))
     else:
         transact.destroy()
         messagebox.showerror("TRANSACTION ERROR", "CHOOSE A VALID TYPE OF TRANSACTION")
@@ -104,6 +111,7 @@ def customer_checker():
             return name[0]
             break
     return add_customer()
+
 # function to get the charge fee in transactions
 def charge(amount):
     if amount < 1000:
@@ -113,6 +121,16 @@ def charge(amount):
         fee = 30
         while(amount_to_charge > 0):
             fee += 15
+            amount_to_charge -= 500
+    return fee
+def claim_charge(amount):
+    if amount < 1000:
+        fee=11.50
+    else:
+        amount_to_charge = amount - 1000
+        fee = 11.50
+        while(amount_to_charge > 0):
+            fee += 5.75
             amount_to_charge -= 500
     return fee
 def padala_charge(amount):
@@ -138,13 +156,14 @@ def add_padala():
     return c.lastrowid
 # adding to claim_info table   
 def add_claim():
-    return 
-def top_up():
-    return 
-def withdraw():
-    return 
-def deposit():
-    return   
+    conn = create_connection(database)
+    c = conn.cursor()
+    value = (str(ctime()),str(amount_entry.get()), str(reference_number_entry.get()))
+    sql = '''INSERT INTO claim_info (date_and_time, amount_of_claim, reference_number)
+                VALUES(?,?,?)'''
+    c.execute(sql,value)
+    conn.commit()
+    return c.lastrowid
 # get the cash onhand and cash on padala before transaction
 def get_cash():
     conn = create_connection(database)
@@ -176,23 +195,64 @@ def add_transaction():
     elif choice.get()=="CLAIM":
         claim_id = add_claim()
         current_cash = get_cash()
-        coh_after = current_cash[0] + float(amount_entry.get()) + charge(float(amount_entry.get()))
-        cop_after = current_cash[1] - float(amount_entry.get()) - padala_charge(float(amount_entry.get()))
-        value = (str(ctime()), "PADALA", padala_id, float(amount_entry.get()), current_cash[0], coh_after, current_cash[1],cop_after)
-        sql = '''INSERT INTO transactions_info (date_and_time, type, padala_id, amount, cash_on_hand_before,
+        coh_after = current_cash[0] - float(amount_entry.get())
+        cop_after = current_cash[1] + float(amount_entry.get()) + claim_charge(float(amount_entry.get()))
+        value = (str(ctime()), "CLAIM", claim_id, float(amount_entry.get()), current_cash[0], coh_after, current_cash[1],cop_after)
+        sql = '''INSERT INTO transactions_info (date_and_time, type, claim_id, amount, cash_on_hand_before,
                     cash_on_hand_after, cash_on_padala_before, cash_on_padala_after)
                 VALUES(?,?,?,?,?,?,?,?)'''
+    elif choice.get()=="TOPUP":
+        current_cash = get_cash()
+        coh_after = current_cash[0] - float(amount_entry.get())
+        cop_after = current_cash[1] + float(amount_entry.get())
+        value = (str(ctime()), "TOPUP", float(amount_entry.get()), current_cash[0], coh_after, current_cash[1],cop_after)
+        sql = '''INSERT INTO transactions_info (date_and_time, type, amount, cash_on_hand_before,
+                    cash_on_hand_after, cash_on_padala_before, cash_on_padala_after)
+                VALUES(?,?,?,?,?,?,?)'''
+    elif choice.get()=="WITHDRAW":
+        current_cash = get_cash()
+        coh_after = current_cash[0] + float(amount_entry.get())
+        cop_after = current_cash[1]
+        value = (str(ctime()), "WITHDRAW", float(amount_entry.get()), current_cash[0], coh_after, current_cash[1],cop_after)
+        sql = '''INSERT INTO transactions_info (date_and_time, type, amount, cash_on_hand_before,
+                    cash_on_hand_after, cash_on_padala_before, cash_on_padala_after)
+                VALUES(?,?,?,?,?,?,?)'''
+    elif choice.get()=="DEPOSIT":
+        current_cash = get_cash()
+        coh_after = current_cash[0] - float(amount_entry.get())
+        cop_after = current_cash[1]
+        value = (str(ctime()), "DEPOSIT", float(amount_entry.get()), current_cash[0], coh_after, current_cash[1],cop_after)
+        sql = '''INSERT INTO transactions_info (date_and_time, type, amount, cash_on_hand_before,
+                    cash_on_hand_after, cash_on_padala_before, cash_on_padala_after)
+                VALUES(?,?,?,?,?,?,?)'''
 
     c.execute(sql,value)
     conn.commit()
     transact.destroy()
     return
+class table_columns:
+    def __init__(self, date, amount,name,num):
+        self.date = date
+        self.amount = amount
+        self.name = name
+        self.num = num 
 def display_padala_history():
     conn = create_connection(database)
     c = conn.cursor()
-    c.execute("SELECT * FROM padala_info ORDER BY padala_id DESC")
+    c.execute("SELECT * FROM padala_info ORDER BY padala_id DESC LIMIT 10")
     padala_list = c.fetchall()
-    return padala_list
+    padala_date_history = ''
+    padala_amount_history = ''
+    padala_name_history = ''
+    padala_num_history = ''
+    for padala in padala_list:
+        padala_date_history += str(padala[1]) + '\n'
+        padala_amount_history += str(padala[6]) + '\n' 
+        padala_name_history += str(padala[3]) +" "+str(padala[4])+'\n'  
+        padala_num_history += str(padala[5]) + '\n' 
+    padala_history = table_columns(padala_date_history, padala_amount_history, padala_name_history, padala_num_history)
+    return padala_history
+
 
 def main():
     global database
@@ -223,10 +283,10 @@ def main():
     claim_table = """CREATE TABLE IF NOT EXISTS claim_info(
                     claim_id INTEGER PRIMARY KEY,
                     date_and_time TEXT NOT NULL,
-                    customer_id INTEGER NOT NULL,
-                    first_name TEXT NOT NULL,
-                    last_name TEXT NOT NULL,
-                    phone_number INTEGER NOT NULL,
+                    customer_id INTEGER,
+                    first_name TEXT,
+                    last_name TEXT,
+                    phone_number INTEGER,
                     amount_of_claim REAL NOT NULL,
                     reference_number TEXT NOT NULL,
                     FOREIGN KEY (customer_id)
@@ -262,7 +322,7 @@ def main():
     root= Tk()
     root.title("SMART PADALA TRACKER")
     root.iconbitmap(".\\assets\\icon.ico")
-    root.geometry("400x400")
+    root.geometry("600x400")
 
     # Root Labels
     time_label = Label(root, text=ctime())
@@ -305,7 +365,7 @@ def main():
     add_drop.grid(row=0, column=0, ipadx=10, sticky=W)
     add_button = Button(frameAR, text="ADD", command=add_activity)
     add_button.grid(row=0, column=1, padx=(0,5))
-    refresh_button = Button(frameAR, text = "REFRESH", anchor=CENTER, command=refresh)
+    refresh_button = Button(frameAR, text = "REFRESH", anchor=CENTER, command=display_padala_history)
     refresh_button.grid(row=0, column=2)
 
     # frame3
@@ -318,15 +378,26 @@ def main():
     amount_f3.grid(row = 0, column= 1)
 
     # frame4
-    frame4 = LabelFrame(root, text = "Padala History")
+    frame4 = LabelFrame(root, text = "Padala History", labelanchor=N,bg="#c0c0c2",font = ("Nexa", 12))
     frame4.grid(row = 3, column = 1)
     # frame4 labels
-    date_f4 = Label(frame4, text="Date&Time")
-    date_f4.grid(row = 0, column = 0)
-    amount_f4 = Label(frame4, text = "Amount")
-    amount_f4.grid(row = 0, column= 1)
-    name_f4 = Label(frame4, text = "Name")
-    name_f4.grid(row=0, column=2)
+    date_f4 = Label(frame4, text="Date&Time",bg = 'blue',font = ("Roboto", 12))
+    date_f4.grid(row = 0, column = 0, ipadx=40)
+    amount_f4 = Label(frame4, text = "Amount", bg='red',font = ("Roboto", 12))
+    amount_f4.grid(row = 0, column= 1, ipadx=30)
+    name_f4 = Label(frame4, text = "Name", bg='green',font = ("Roboto", 12))
+    name_f4.grid(row=0, column=2, ipadx=30)
+    number_f4 = Label(frame4, text = "Number", bg='yellow',font = ("Roboto", 12))
+    number_f4.grid(row=0, column=3, ipadx=35)
+    padala_history = display_padala_history()
+    padala_history_date_label = Label(frame4, text = padala_history.date,font = ("Sans-serif", 10),bg="#c0c0c2")
+    padala_history_date_label.grid(row=1, column = 0)
+    padala_history_amount_label = Label(frame4, text = padala_history.amount,font = ("Sans-serif", 10),bg="#c0c0c2")
+    padala_history_amount_label.grid(row=1, column = 1)
+    padala_history_name_label = Label(frame4, text = padala_history.name,font = ("Sans-serif", 10),bg="#c0c0c2")
+    padala_history_name_label.grid(row=1, column = 2)
+    padala_history_num_label = Label(frame4, text = padala_history.num,font = ("Sans-serif", 10),bg="#c0c0c2")
+    padala_history_num_label.grid(row=1, column = 3)
 
     root.mainloop()
 
