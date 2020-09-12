@@ -120,7 +120,8 @@ def claim_now(date):
         Label(claim_window, text= record[0][7]).grid(row=5, column=1, pady=(0,10))
         confirm_button = Button(claim_window, text="CONFIRM", command=lambda: edit_claim(date)).grid(row=7,column=1,ipadx=10, pady=(15,0))
         return 
-    def edit_claim(date):
+def edit_claim(date):
+    try: 
         conn = create_connection(database)
         c = conn.cursor()
         customer_id = customer_checker()
@@ -135,6 +136,8 @@ def claim_now(date):
         conn.commit()
         claim_window.destroy()
         refresh()
+    except:
+        messagebox.showerror("TRANSACTION ERROR", "INPUT CORRECT INFORMATION")
     return
 # refresh the root window
 def refresh():
@@ -195,29 +198,32 @@ def display_frame2():
 def display_frameAR():
     global frameAR
     # Frame Add and refresh
-    frameAR = LabelFrame(root, borderwidth = 0)
-    frameAR.grid(row = 2, column = 0, columnspan=2,pady=(10,0))
+    frameAR = LabelFrame(root, borderwidth = 0, bg="#71afe5")
+    frameAR.grid(row = 2, column = 0, columnspan=2,pady=(10,2))
     types = ["PADALA", "CLAIM", "TOP UP", "WITHDRAW", "DEPOSIT"]
     global choice
     choice = StringVar()
     choice.set("CHOOSE A TRANSACTION")
     add_drop = OptionMenu(frameAR, choice, *types)
+    add_drop.config(bg="white", font =("Roboto", 10), borderwidth = 2, relief = FLAT)
     add_drop.grid(row=0, column=0, ipadx=10, sticky=W)
     add_button = Button(frameAR, text="ADD", command=add_activity)
-    add_button.grid(row=0, column=1, padx=(0,5))
+    add_button.config(bg="white", font =("Roboto", 10), borderwidth = 2, relief = RAISED)
+    add_button.grid(row=0, column=1, padx=(2,5))
     refresh_button = Button(frameAR, text = "REFRESH", anchor=CENTER, command=refresh)
+    refresh_button.config(bg="white", font =("Roboto", 10), borderwidth = 2, relief = RAISED)
     refresh_button.grid(row=0, column=2)
     return
 def display_frame3():
     global frame3
     # frame3
     frame3 = LabelFrame(root, text= "Unclaimed Padalas", labelanchor=N,bg="white",font = ("Nexa", 13))
-    frame3.grid(row = 3, columnspan = 2, pady=(0,10))
+    frame3.grid(row = 3, columnspan = 2, pady=(0,5))
     to_claim_list = display_unclaimed()
     # frame3 labels
-    Label(frame3, text="Date&Time",bg = '#c7e0f4',font = ("Roboto", 13)).grid(row = 0, column = 0, ipadx=(50))
-    Label(frame3, text = "Amount",bg = '#c7e0f4',font = ("Roboto", 13)).grid(row = 0, column= 1)
-    Label(frame3, text = "Reference Number",bg = '#c7e0f4',font = ("Roboto", 13)).grid(row = 0, column= 2)
+    Label(frame3, text="Date&Time",bg = '#c7e0f4',font = ("Roboto", 13),borderwidth=5).grid(row = 0, column = 0, ipadx=40,padx=(5,0))
+    Label(frame3, text = "Amount",bg = '#c7e0f4',font = ("Roboto", 13),borderwidth=5).grid(row = 0, column= 1,padx=(5,5))
+    Label(frame3, text = "Reference Number",bg = '#c7e0f4',font = ("Roboto", 13),borderwidth=5).grid(row = 0, column= 2,padx=(0,5))
     date = StringVar()
     date.set('None')
     row = 0
@@ -226,31 +232,31 @@ def display_frame3():
         Label(frame3, text = to_claim_list[row][6],font = ("Sans-serif", 11),bg="white").grid(row = row+1, column= 1)
         Label(frame3, text = to_claim_list[row][7],font = ("Sans-serif", 11),bg="white").grid(row = row+1, column= 2)
         row +=1
-    claim_button = Button(frame3, text="CLAIM", command=lambda: claim_now(date.get()))
-    claim_button.grid(row=row+1, columnspan= 3)
+    claim_button = Button(frame3, text="CLAIM", command=lambda: claim_now(date.get()), font =("Roboto", 10), borderwidth = 2, relief = RAISED)
+    claim_button.grid(row=row+1, columnspan= 3, ipadx=15)
     return
 def display_frame4():
     global frame4
     # frame4
-    frame4 = LabelFrame(root, text = "Padala History", labelanchor=N,bg="#c0c0c2",font = ("Nexa", 13))
-    frame4.grid(row = 4, columnspan = 2)
+    frame4 = LabelFrame(root, text = "Padala History", labelanchor=N,bg="white",font = ("Nexa", 13))
+    frame4.grid(row = 4, columnspan = 2,padx=10)
     # frame4 labels
-    date_f4 = Label(frame4, text="Date&Time",bg = 'blue',font = ("Roboto", 13))
-    date_f4.grid(row = 0, column = 0, ipadx=40)
-    amount_f4 = Label(frame4, text = "Amount", bg='red',font = ("Roboto", 13))
-    amount_f4.grid(row = 0, column= 1, ipadx=30)
-    name_f4 = Label(frame4, text = "Name", bg='green',font = ("Roboto", 13))
-    name_f4.grid(row=0, column=2, ipadx=30)
-    number_f4 = Label(frame4, text = "Number", bg='yellow',font = ("Roboto", 13))
-    number_f4.grid(row=0, column=3, ipadx=35)
+    date_f4 = Label(frame4, text="Date&Time",bg = '#c7e0f4',font = ("Roboto", 13),borderwidth=5)
+    date_f4.grid(row = 0, column = 0, ipadx=35,padx=(5,5))
+    amount_f4 = Label(frame4, text = "Amount",bg = '#c7e0f4',font = ("Roboto", 13),borderwidth=5)
+    amount_f4.grid(row = 0, column= 1, ipadx=30,padx=(0,5))
+    name_f4 = Label(frame4, text = "Name",bg = '#c7e0f4',font = ("Roboto", 13),borderwidth=5)
+    name_f4.grid(row=0, column=2, ipadx=30,padx=(0,5))
+    number_f4 = Label(frame4, text = "Number",bg = '#c7e0f4',font = ("Roboto", 13),borderwidth=5)
+    number_f4.grid(row=0, column=3, ipadx=35,padx=(0,5))
     padala_history = display_padala_history()
-    padala_history_date_label = Label(frame4, text = padala_history.date,font = ("Sans-serif", 11),bg="#c0c0c2")
+    padala_history_date_label = Label(frame4, text = padala_history.date,font = ("Sans-serif", 11),bg="white")
     padala_history_date_label.grid(row=1, column = 0)
-    padala_history_amount_label = Label(frame4, text = padala_history.amount,font = ("Sans-serif", 11),bg="#c0c0c2")
+    padala_history_amount_label = Label(frame4, text = padala_history.amount,font = ("Sans-serif", 11),bg="white")
     padala_history_amount_label.grid(row=1, column = 1)
-    padala_history_name_label = Label(frame4, text = padala_history.name,font = ("Sans-serif", 11),bg="#c0c0c2")
+    padala_history_name_label = Label(frame4, text = padala_history.name,font = ("Sans-serif", 11),bg="white")
     padala_history_name_label.grid(row=1, column = 2)
-    padala_history_num_label = Label(frame4, text = padala_history.num,font = ("Sans-serif", 11),bg="#c0c0c2")
+    padala_history_num_label = Label(frame4, text = padala_history.num,font = ("Sans-serif", 11),bg="white")
     padala_history_num_label.grid(row=1, column = 3)
     return
 # add customer in customer_info table
@@ -337,7 +343,7 @@ def add_padala():
 def add_claim():
     conn = create_connection(database)
     c = conn.cursor()
-    value = (str(amount_entry.get()), str(reference_number_entry.get()))
+    value = (str(amount_entry.get()), str(reference_number_entry.get()).upper())
     sql = '''INSERT INTO claim_info (date_and_time, amount_of_claim, reference_number)
                 VALUES(datetime('now', 'localtime'),?,?)'''
     c.execute(sql,value)
@@ -371,16 +377,18 @@ def add_transaction():
             sql = '''INSERT INTO transactions_info (date_and_time, type, padala_id, amount, cash_on_hand_before,
                         cash_on_hand_after, cash_on_padala_before, cash_on_padala_after)
                     VALUES(datetime('now', 'localtime'),?,?,?,?,?,?,?)'''
-
         elif choice.get()=="CLAIM":
-            claim_id = add_claim()
-            current_cash = get_cash()
-            coh_after = current_cash[0] - float(amount_entry.get())
-            cop_after = current_cash[1] + float(amount_entry.get()) + claim_charge(float(amount_entry.get()))
-            value = ("CLAIM", claim_id, float(amount_entry.get()), current_cash[0], coh_after, current_cash[1],cop_after)
-            sql = '''INSERT INTO transactions_info (date_and_time, type, claim_id, amount, cash_on_hand_before,
-                        cash_on_hand_after, cash_on_padala_before, cash_on_padala_after)
-                    VALUES(datetime('now', 'localtime'),?,?,?,?,?,?,?)'''
+            if amount_entry.get() != "" and reference_number_entry.get() != "":
+                claim_id = add_claim()
+                current_cash = get_cash()
+                coh_after = current_cash[0] - float(amount_entry.get())
+                cop_after = current_cash[1] + float(amount_entry.get()) + claim_charge(float(amount_entry.get()))
+                value = ("CLAIM", claim_id, float(amount_entry.get()), current_cash[0], coh_after, current_cash[1],cop_after)
+                sql = '''INSERT INTO transactions_info (date_and_time, type, claim_id, amount, cash_on_hand_before,
+                            cash_on_hand_after, cash_on_padala_before, cash_on_padala_after)
+                        VALUES(datetime('now', 'localtime'),?,?,?,?,?,?,?)'''
+            else:
+                raise
         elif choice.get()=="TOP UP":
             current_cash = get_cash()
             coh_after = current_cash[0] - float(amount_entry.get())
@@ -545,7 +553,7 @@ def main():
     root= Tk()
     root.title("SMART PADALA TRACKER")
     root.iconbitmap(".\\assets\\icon.ico")
-    root.geometry("550x650")
+    root.geometry("590x700")
     root.configure(bg="#71afe5")
     display_frame1()
     display_frame2()
