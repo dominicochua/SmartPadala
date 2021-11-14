@@ -6,5 +6,5 @@ with this app you can track your:
  - current cash on hand 
  - current cash inside your smart padala number
  - number of padala and claimer within the day
- - amount of claimed and palada within the day
+ - amount of claimed and padala within the day
  
